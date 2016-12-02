@@ -118,13 +118,31 @@ class Menus : BasicMenuData {
 }
 
 class OptionInfo: BasicMenuData {
-    private var optionIndex_: String = ""
-    var optionIndex: String {
+
+    private var extraPrice_: Float = 0.0
+    var extraPrice: Float {
         set {
-            self.optionIndex_ = newValue
+            self.extraPrice_ = newValue
         }
         get {
-            return self.optionIndex_
+            return self.extraPrice_
+        }
+    }
+
+    init(value_kor: String, value_eng: String, value_chn: String, extraPrice: Float) {
+        super.init(key: "", value_kor: value_kor, value_eng: value_eng, value_chn: value_chn)
+        self.extraPrice = extraPrice
+    }
+}
+
+class Options {
+    private var key_: String = ""
+    var key: String {
+        set {
+            self.key_ = newValue
+        }
+        get {
+            return self.key_
         }
     }
     private var optionType_: String? = ""
@@ -136,21 +154,24 @@ class OptionInfo: BasicMenuData {
             return self.optionType_!
         }
     }
-    private var extraPrice_: Float = 0.0
-    var extraPrice: Float {
-        set {
-            self.extraPrice_ = newValue
-        }
-        get {
-            return self.extraPrice_
-        }
-    }
-
-    init(key: String, optionIndex: String, optionType: String, value_kor: String, value_eng: String, value_chn: String, extraPrice: Float) {
-        super.init(key: key, value_kor: value_kor, value_eng: value_eng, value_chn: value_chn)
-        self.optionIndex = optionIndex
+    private var ary_: [OptionInfo]? = [OptionInfo]()
+    
+    init(key: String, optionType: String) {
+        self.key_ = key
         self.optionType = optionType
-        self.extraPrice = extraPrice
+    }
+    
+    convenience init(key: String, optionType: String, newInfo: OptionInfo) {
+        self.init(key: key, optionType: optionType)
+        addOption(newInfo: newInfo)
+    }
+    
+    func addOption(newInfo: OptionInfo) {
+        ary_!.append(newInfo)
+    }
+    
+    func getOptionInfo() -> [OptionInfo] {
+        return ary_!
     }
 }
 
@@ -192,14 +213,14 @@ class DataManager {
 
     private var localization_: [String: Localization]?
     private var menus_: [String: Menus]?
-    private var optionInfo_: [String: OptionInfo]?
+    private var options_: [String: Options]?
     private var menuNOpt_: [String: MenuNOption]?
     
     init() {
         Data_ = Data()
         localization_ = nil
         menus_ = nil
-        optionInfo_ = nil
+        options_ = nil
         menuNOpt_ = nil
     }
     
@@ -229,16 +250,22 @@ class DataManager {
     }
     
     public func initOptionInfo() {
-        self.optionInfo_ = [String: OptionInfo]()
+        self.options_ = [String: Options]()
         
-        for (key, value) in Data_.aryOptionInformation {
+        for value in Data_.aryOptionInformation {
             var extra_price = Float(value[5]) as Float?
             if extra_price == nil {
                 extra_price = 0.0
             }
             
-            let temp = OptionInfo(key: key, optionIndex: value[0], optionType: value[1], value_kor: value[2], value_eng: value[3], value_chn: value[4], extraPrice: extra_price!)
-            optionInfo_![key] = temp
+            let key = value[0]      // opt_ID
+            let temp = OptionInfo(value_kor: value[2], value_eng: value[3], value_chn: value[4], extraPrice: extra_price!)
+            if let _ = self.options_![key] {
+                self.options_![key]!.addOption(newInfo: temp)
+            }
+            else {
+                self.options_![key] = Options(key: key, optionType: value[1], newInfo: temp)
+            }
         }
     }
     
@@ -252,6 +279,12 @@ class DataManager {
     }
     
     // get functions by conditions
+    public func getMenuData(key: String) -> Menus? {
+        if let index = self.menus_!.index(where: { $0.key == key }) {
+            return self.menus_![index].value
+        }
+        return nil
+    }
     public func getMenuData(mainCategory: String) -> [Menus] {
         var ret = [Menus]()
         
@@ -265,12 +298,41 @@ class DataManager {
     }
     
     public func getMenuType(key: String) -> String? {
-        
-        if let temp = self.optionInfo_?[key] as OptionInfo? {
-            if let ret = temp.optionType as String? {
-                return ret
+        if let opt_key = self.menuNOpt_![key] {
+            if let options = self.options_![opt_key.aryOpt[0]] {
+                return options.optionType
             }
+            return nil
         }
         return nil
+    }
+    
+    public func getOptions(key: String) -> [OptionInfo] {
+        var ret = [OptionInfo]()
+        if let index = self.options_!.index(where: { $0.key == key }) {
+            ret = self.options_![index].value.getOptionInfo()
+        }
+        return ret
+    }
+    
+    public func getSubMenuData(subKey: String) -> [Menus] {
+        var ret = [Menus]()
+        
+        for (_, value) in menus_! {
+            // compare to only sub_category
+            if (value.subCategory == subKey && value.mainCategory.isEmpty) {
+                ret.append(value)
+            }
+        }
+        return ret
+    }
+    
+    public func getOptionsByMenuIndex(key: String) -> [String] {
+        var ret = [String]()
+        
+        if let index = self.menuNOpt_!.index(where: { $0.key == key }) {
+            ret = self.menuNOpt_![index].value.aryOpt
+        }
+        return ret
     }
 }

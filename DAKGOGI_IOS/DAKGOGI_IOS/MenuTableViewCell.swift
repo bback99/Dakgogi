@@ -31,7 +31,7 @@ class MenuTableViewCellEx : UITableViewCell {
     @IBOutlet weak var lbExplanation_: UILabel!
     @IBOutlet weak var lbPrice_: UILabel!
     @IBOutlet weak var lbSubTotal_: UILabel!
-    @IBOutlet weak var lbQTY_: UILabel!
+    @IBOutlet weak var stepper_: UIStepper!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -39,5 +39,9 @@ class MenuTableViewCellEx : UITableViewCell {
     
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
+    }
+    
+    func resetStepper() {
+        stepper_!.value = 0
     }
 }

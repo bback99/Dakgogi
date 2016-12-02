@@ -99,8 +99,8 @@ class MainViewController: UIViewController {
         barMenu!.title = ""
         barMenu!.image = UIImage(named: "ico_menu")!
         
-        barCart!.title = ""
-        barCart!.image = UIImage(named: "ico_cart")!
+//        barCart!.title = ""
+//        barCart!.image = UIImage(named: "ico_cart")!
         
         self.navigationController!.navigationBar.barTintColor = UIColor(red: 1.0, green: 211.0/255.0, blue: 0.0, alpha: 1.0)
         

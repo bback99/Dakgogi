@@ -1,44 +1,27 @@
 //
-//  MenuTableViewController.swift
+//  SubMenuTableViewController.swift
 //  DAKGOGI_IOS
 //
-//  Created by shoong on 2016-11-16.
+//  Created by shoong on 2016-11-21.
 //  Copyright © 2016 SnowBack.com. All rights reserved.
 //
 
 import UIKit
 
-class MenusEx: Menus {
-    // to show expanding area
-    private var isExpend_: Bool = false
-    var isExpend: Bool {
-        set {
-            self.isExpend_ = newValue
-        }
-        get {
-            return self.isExpend_
-        }
-    }
+class SubMenuTableViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
-    init(menus: Menus) {
-        super.init(key: menus.key, value_kor: menus.value_kor, value_eng: menus.value_eng, value_chn: menus.value_chn, explanation: menus.explanation, imgName: menus.imgName, mainCategory: menus.mainCategory, subCategory: menus.subCategory, price: menus.price)
-        self.isExpend = false
-    }
-}
-
-class MenuTableViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-
-    var mainCategory_: String = ""
     var subCategory_: String = ""
     var dishName_: String = ""
     var optIndex_: [String] = [String]()
     var sub_menus_ = [MenusEx]()
     var dishID_: String = ""
     var QTY_: Int = 0
-    
+
+    @IBOutlet weak var tvSubMenu_: UITableView!
+    @IBOutlet weak var barBackToMenu_: UIBarButtonItem!
     @IBAction func stepperValueChanged(_ sender: UIStepper) {
         QTY_ = Int(sender.value)
-        tvMenu_.reloadData()
+        tvSubMenu_.reloadData()
         
         if QTY_ <= 0 {
             MenuTableViewCommon().changeButton(btn: btnPlaceAnOder_, setEnabled: false)
@@ -47,14 +30,12 @@ class MenuTableViewController: UIViewController, UITableViewDataSource, UITableV
             MenuTableViewCommon().changeButton(btn: btnPlaceAnOder_, setEnabled: true)
         }
     }
-    @IBOutlet weak var tvMenu_: UITableView!
-    @IBOutlet weak var barBackToMain_: UIBarButtonItem!
     @IBOutlet weak var btnPlaceAnOder_: UIButton!
     @IBAction func btnPlaceAnOrderClicked_(_ sender: UIButton) {
         // initialize QTY, TableView and PlaceAnOrder Button
         OrderDataManager.sharedInstance().addOrder(dishID: dishID_, QTY: QTY_)
         QTY_ = 0
-        tvMenu_.reloadData()
+        tvSubMenu_.reloadData()
         MenuTableViewCommon().changeButton(btn: btnPlaceAnOder_, setEnabled: false)
     }
     
@@ -67,13 +48,13 @@ class MenuTableViewController: UIViewController, UITableViewDataSource, UITableV
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
         
-        tvMenu_.delegate = self
-        tvMenu_.dataSource = self
+        self.tvSubMenu_.delegate = self
+        self.tvSubMenu_.dataSource = self
         
-        barBackToMain_.title = mainCategory_
+        barBackToMenu_.title = subCategory_
         
         // to get menus by sub_menu string from mainView
-        let ary_temp = DataManager.sharedInstance().getMenuData(mainCategory: mainCategory_)
+        let ary_temp = DataManager.sharedInstance().getSubMenuData(subKey: subCategory_)
         
         // convert to menu_ex(with expend field) class
         for menu in ary_temp {
@@ -81,35 +62,26 @@ class MenuTableViewController: UIViewController, UITableViewDataSource, UITableV
             sub_menus_.append(menu_ex)
         }
         
-        // sort by ID because menus_ are from dictionary
-        sub_menus_ = sub_menus_.sorted(by: {$0.key < $1.key})
-        
         // initialize PlaceAnOrder Button
         MenuTableViewCommon().changeButton(btn: btnPlaceAnOder_, setEnabled: false)
     }
     
     @IBAction func unwindBackToMain(sender: UIStoryboardSegue) {
     }
-    
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == "subMenuSegue") {
-            let menuView = segue.destination as! SubMenuTableViewController
-            menuView.subCategory_ = self.subCategory_
-        }
-        else if (segue.identifier == "optMenuSegue") {
+        if (segue.identifier == "optMenuSegue") {
             let menuView = segue.destination as! OptMenuViewController
             menuView.dishID_ = self.dishID_
             menuView.dishName_ = self.dishName_
             menuView.options_ = self.optIndex_
         }
     }
-
-    // MARK: - Table view data source
 
     func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
@@ -127,8 +99,7 @@ class MenuTableViewController: UIViewController, UITableViewDataSource, UITableV
     
     // when clicked row
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        subCategory_ = sub_menus_[indexPath.row].subCategory
-        MenuTableViewCommon().tableView(tableView, didSelectRowAt: indexPath, sub_menus_: sub_menus_, viewController: self, dishID_: &self.dishID_, dishName_: &self.dishName_, optIndex_: &self.optIndex_)
+        MenuTableViewCommon().tableView(tableView, didSelectRowAt: indexPath, sub_menus_: sub_menus_, viewController: self, dishID_: &dishID_, dishName_: &self.dishName_, optIndex_: &self.optIndex_)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
